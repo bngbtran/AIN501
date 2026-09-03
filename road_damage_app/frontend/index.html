@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>RoadVision — Road Damage Detection</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+        rel="stylesheet"
+    >
+
+    <style>
+
+        :root {
+            --primary: #696969;
+            --light: #f6f6f6;
+            --border: #e5e5e5;
+            --text: #2f2f2f;
+            --muted: #8a8a8a;
+        }
+
+        body {
+            font-family:
+                Inter,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+            color: var(--text);
+        }
+
+        .primary {
+            color: var(--primary);
+        }
+
+        .primary-bg {
+            background-color: var(--primary);
+        }
+
+        .image-card {
+            background: #fafafa;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .image-wrapper {
+            background: #f4f4f4;
+            min-height: 420px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-wrapper img {
+            width: 100%;
+            max-height: 520px;
+            object-fit: contain;
+        }
+
+        .upload-zone {
+            border: 1px dashed #cfcfcf;
+            transition: all 0.2s ease;
+        }
+
+        .upload-zone:hover {
+            border-color: #696969;
+            background: #fafafa;
+        }
+
+        .detect-button {
+            background: #696969;
+            transition: all 0.2s ease;
+        }
+
+        .detect-button:hover {
+            background: #555555;
+        }
+
+        .detect-button:disabled {
+            background: #b5b5b5;
+            cursor: not-allowed;
+        }
+
+        .stat-card {
+            background: #fafafa;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+        }
+
+        .detection-item {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: white;
+        }
+
+        .loading-line {
+            width: 100%;
+            height: 2px;
+            background: #696969;
+            animation: loading 1.4s infinite ease-in-out;
+            transform-origin: left;
+        }
+
+        @keyframes loading {
+            0% {
+                transform: scaleX(0);
+                opacity: 0.4;
+            }
+
+            50% {
+                transform: scaleX(0.7);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scaleX(1);
+                opacity: 0.4;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body class="bg-white min-h-screen">
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <header class="border-b border-gray-300 text-white" style="background-color: var(--primary);">
+    <div class="max-w-6xl mx-auto px-6 py-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <div
+                    class="text-xs
+                            tracking-widest
+                            uppercase
+                            text-gray-200
+                            font-semibold
+                            mb-2"
+                >
+                    AIN501 · Project
+                </div>
+
+                <h1
+                    class="text-2xl
+                            md:text-3xl
+                            font-semibold
+                            tracking-tight
+                            text-white"
+                >
+                    Road Damage Detection
+                </h1>
+
+                <p
+                    class="text-sm
+                            text-gray-200
+                            mt-2"
+                >
+                    Phát hiện và phân loại hư hỏng mặt đường
+                    bằng mô hình YOLO11s-P2 + Mish.
+                </p>
+            </div>
+
+            <div
+                class="hidden md:block
+                       text-right"
+            >
+                <div
+                    class="text-xs
+                            uppercase
+                            tracking-widest
+                            text-gray-300"
+                >
+                    Model
+                </div>
+
+                <div
+                    class="text-sm
+                            font-medium
+                            text-gray-100
+                            mt-1"
+                >
+                    YOLO11s-P2 + Mish
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+    <!-- =====================================================
+         MAIN
+    ====================================================== -->
+
+    <main class="max-w-6xl mx-auto px-6 py-10">
+
+
+        <!-- =================================================
+             UPLOAD
+        ================================================== -->
+
+        <section id="uploadSection">
+
+            <div
+                id="uploadArea"
+                class="upload-zone
+                       rounded-2xl
+                       p-10
+                       text-center"
+            >
+
+                <p
+                    class="text-sm
+                           font-medium
+                           text-gray-700"
+                >
+                    Chọn ảnh mặt đường
+                </p>
+
+                <p
+                    class="text-sm
+                           text-gray-400
+                           mt-2
+                           mb-6"
+                >
+                    JPG, JPEG hoặc PNG
+                </p>
+
+                <label
+                    for="imageInput"
+                    class="inline-flex
+                           items-center
+                           px-6
+                           py-3
+                           primary-bg
+                           text-white
+                           rounded-lg
+                           text-sm
+                           font-medium
+                           cursor-pointer
+                           hover:bg-gray-700
+                           transition"
+                >
+                    Chọn ảnh
+                </label>
+
+                <input
+                    type="file"
+                    id="imageInput"
+                    accept="image/jpeg,image/png,image/jpg"
+                    class="hidden"
+                >
+
+                <p
+                    id="fileName"
+                    class="text-xs
+                           text-gray-400
+                           mt-4"
+                >
+                    Chưa có ảnh được chọn
+                </p>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             PREVIEW / RESULT
+        ================================================== -->
+
+        <section
+            id="comparisonSection"
+            class="hidden mt-10"
+        >
+
+            <div
+                class="grid
+                       grid-cols-1
+                       lg:grid-cols-2
+                       gap-6"
+            >
+
+
+                <!-- =========================================
+                     ORIGINAL
+                ========================================== -->
+
+                <div>
+
+                    <div
+                        class="flex
+                               items-end
+                               justify-between
+                               mb-3"
+                    >
+
+                        <div>
+
+                            <h2
+                                class="text-base
+                                       font-semibold"
+                            >
+                                Ảnh gốc
+                            </h2>
+
+                            <p
+                                class="text-xs
+                                       text-gray-400
+                                       mt-1"
+                            >
+                                Ảnh đầu vào
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="image-card">
+
+                        <div class="image-wrapper">
+
+                            <img
+                                id="previewImage"
+                                src=""
+                                alt="Ảnh gốc"
+                            >
+
+                            <div
+                                id="previewPlaceholder"
+                                class="hidden
+                                       text-sm
+                                       text-gray-400"
+                            >
+                                Chưa có ảnh
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- =========================================
+                     RESULT
+                ========================================== -->
+
+                <div>
+
+                    <div
+                        class="flex
+                               items-end
+                               justify-between
+                               mb-3"
+                    >
+
+                        <div>
+
+                            <h2
+                                class="text-base
+                                       font-semibold"
+                            >
+                                Kết quả nhận diện
+                            </h2>
+
+                            <p
+                                class="text-xs
+                                       text-gray-400
+                                       mt-1"
+                            >
+                                Phân tích bởi mô hình AI
+                            </p>
+
+                        </div>
+
+                        <span
+                            id="resultStatus"
+                            class="hidden
+                                   text-xs
+                                   primary"
+                        >
+                            Hoàn tất
+                        </span>
+
+                    </div>
+
+
+                    <div class="image-card">
+
+                        <div
+                            class="image-wrapper
+                                   relative"
+                        >
+
+                            <img
+                                id="outputImage"
+                                src=""
+                                alt="Kết quả nhận diện"
+                                class="hidden"
+                            >
+
+                            <div
+                                id="resultPlaceholder"
+                                class="text-sm
+                                       text-gray-400"
+                            >
+                                Kết quả sẽ xuất hiện ở đây
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 ACTION
+            ================================================== -->
+
+            <div
+                class="flex
+                       flex-col
+                       sm:flex-row
+                       items-center
+                       justify-between
+                       gap-4
+                       mt-6"
+            >
+
+                <div>
+
+                    <p
+                        id="imageInfo"
+                        class="text-xs
+                               text-gray-400"
+                    >
+                        —
+                    </p>
+
+                </div>
+
+
+                <div class="flex gap-3">
+
+                    <button
+                        type="button"
+                        id="changeImageButton"
+                        class="px-5
+                               py-2.5
+                               border
+                               border-gray-300
+                               rounded-lg
+                               text-sm
+                               font-medium
+                               text-gray-600
+                               hover:border-gray-500
+                               transition"
+                    >
+                        Chọn ảnh khác
+                    </button>
+
+
+                    <button
+                        id="detectButton"
+                        type="button"
+                        onclick="uploadImage()"
+                        class="detect-button
+                               px-6
+                               py-2.5
+                               rounded-lg
+                               text-sm
+                               font-medium
+                               text-white"
+                    >
+                        Nhận diện
+                    </button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 LOADING
+            ================================================== -->
+
+            <div
+                id="loading"
+                class="hidden
+                       mt-8
+                       border
+                       border-gray-200
+                       rounded-xl
+                       p-5"
+            >
+
+                <div
+                    class="flex
+                           items-center
+                           justify-between
+                           mb-3"
+                >
+
+                    <span
+                        class="text-sm
+                               font-medium"
+                    >
+                        Đang phân tích
+                    </span>
+
+                    <span
+                        class="text-xs
+                               text-gray-400"
+                    >
+                        YOLO11s-P2
+                    </span>
+
+                </div>
+
+                <div class="loading-line"></div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 SUMMARY
+            ================================================== -->
+
+            <div
+                id="resultContainer"
+                class="hidden mt-10"
+            >
+
+                <div
+                    class="border-t
+                           border-gray-200
+                           pt-8"
+                >
+
+                    <div
+                        class="flex
+                               items-center
+                               justify-between
+                               mb-5"
+                    >
+
+                        <div>
+
+                            <h2
+                                class="text-lg
+                                       font-semibold"
+                            >
+                                Phân tích kết quả
+                            </h2>
+
+                            <p
+                                class="text-sm
+                                       text-gray-400
+                                       mt-1"
+                            >
+                                Tổng hợp các đối tượng được phát hiện
+                            </p>
+
+                        </div>
+
+                        <div
+                            id="detectionSummary"
+                            class="text-right"
+                        ></div>
+
+                    </div>
+
+
+                    <!-- Detection cards -->
+
+                    <div
+                        id="detectionResults"
+                        class="grid
+                               grid-cols-1
+                               md:grid-cols-3
+                               gap-4"
+                    ></div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+
+    <!-- =====================================================
+         FOOTER
+    ====================================================== -->
+
+    <footer
+        class="border-t
+               border-gray-200
+               mt-10"
+    >
+
+        <div
+            class="max-w-6xl
+                   mx-auto
+                   px-6
+                   py-5
+                   flex
+                   items-center
+                   justify-between"
+        >
+
+            <span
+                class="text-xs
+                       text-gray-400"
+            >
+                AIN501 Project
+            </span>
+
+            <span
+                class="text-xs
+                       text-gray-400"
+            >
+                TuNV • TranBNB • VietNA
+            </span>
+
+        </div>
+
+    </footer>
+
+
+
+    <!-- =====================================================
+         PREVIEW SCRIPT
+    ====================================================== -->
+
+    <script>
+
+        const imageInput =
+            document.getElementById("imageInput");
+
+        const comparisonSection =
+            document.getElementById(
+                "comparisonSection"
+            );
+
+        const previewImage =
+            document.getElementById(
+                "previewImage"
+            );
+
+        const outputImage =
+            document.getElementById(
+                "outputImage"
+            );
+
+        const resultPlaceholder =
+            document.getElementById(
+                "resultPlaceholder"
+            );
+
+        const fileName =
+            document.getElementById(
+                "fileName"
+            );
+
+        const imageInfo =
+            document.getElementById(
+                "imageInfo"
+            );
+
+        const changeImageButton =
+            document.getElementById(
+                "changeImageButton"
+            );
+
+        const loading =
+            document.getElementById(
+                "loading"
+            );
+
+        const resultContainer =
+            document.getElementById(
+                "resultContainer"
+            );
+
+        const resultStatus =
+            document.getElementById(
+                "resultStatus"
+            );
+
+
+        // ====================================================
+        // IMAGE SELECT
+        // ====================================================
+
+        imageInput.addEventListener(
+            "change",
+            function () {
+
+                if (!this.files.length) {
+                    return;
+                }
+
+                const file = this.files[0];
+
+
+                if (!file.type.startsWith("image/")) {
+
+                    alert(
+                        "Vui lòng chọn file ảnh hợp lệ."
+                    );
+
+                    this.value = "";
+                    return;
+                }
+
+
+                const imageURL =
+                    URL.createObjectURL(file);
+
+
+                // Hiển thị ảnh gốc ngay lập tức
+
+                previewImage.src =
+                    imageURL;
+
+                previewImage.classList.remove(
+                    "hidden"
+                );
+
+
+                // Tên file
+
+                fileName.textContent =
+                    file.name;
+
+
+                // Thông tin file
+
+                const sizeMB =
+                    (
+                        file.size /
+                        (1024 * 1024)
+                    ).toFixed(2);
+
+                imageInfo.textContent =
+                    `${file.name} · ${sizeMB} MB`;
+
+
+                // Hiển thị comparison
+
+                comparisonSection.classList.remove(
+                    "hidden"
+                );
+
+
+                // Reset kết quả cũ
+
+                outputImage.src = "";
+
+                outputImage.classList.add(
+                    "hidden"
+                );
+
+                resultPlaceholder.classList.remove(
+                    "hidden"
+                );
+
+                resultContainer.classList.add(
+                    "hidden"
+                );
+
+                resultStatus.classList.add(
+                    "hidden"
+                );
+
+            }
+        );
+
+
+        // ====================================================
+        // CHANGE IMAGE
+        // ====================================================
+
+        changeImageButton.addEventListener(
+            "click",
+            function () {
+
+                imageInput.click();
+
+            }
+        );
+
+    </script>
+
+
+    <!-- Main prediction logic -->
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
