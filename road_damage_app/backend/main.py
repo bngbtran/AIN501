@@ -16,7 +16,7 @@ from ultralytics.nn import tasks as tasks_module
 
 
 # ============================================================
-# 1. Mish - PHẢI khai báo trước khi load best.pt
+# 1. Mish - PHẢI khai báo trước khi load model
 # ============================================================
 
 
@@ -58,6 +58,8 @@ app.add_middleware(
 
 # ============================================================
 # 4. Load model
+#
+#    Chỉ dùng duy nhất model base_best.pt.
 # ============================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -66,9 +68,13 @@ MODEL_PATH = os.path.join(BASE_DIR, "best.pt")
 # Notebook dùng cuda:0 khi có GPU, nếu không thì CPU.
 DEVICE = 0 if torch.cuda.is_available() else "cpu"
 
+IMGSZ = 640
+CONF_THRES = 0.25
+
 if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError(
-        f"Không tìm thấy model: {MODEL_PATH}. Hãy đặt best.pt cùng thư mục với main.py."
+        f"Không tìm thấy model: {MODEL_PATH}. "
+        "Hãy đặt base_best.pt cùng thư mục với main.py."
     )
 
 print(f"Loading model: {MODEL_PATH}")
@@ -89,11 +95,11 @@ print("Device:", "cuda:0" if DEVICE == 0 else "cpu")
 def home():
     return {
         "message": "Road Damage Detection API is running",
-        "model": "YOLO11s-P2 + Mish",
+        "model": "base_best",
         "model_path": MODEL_PATH,
         "device": "cuda:0" if DEVICE == 0 else "cpu",
-        "imgsz": 640,
-        "conf": 0.25,
+        "imgsz": IMGSZ,
+        "conf": CONF_THRES,
         "classes": model.names,
     }
 
@@ -142,8 +148,8 @@ async def predict(file: UploadFile = File(...)):
     try:
         results = model.predict(
             source=img,
-            imgsz=640,
-            conf=0.25,
+            imgsz=IMGSZ,
+            conf=CONF_THRES,
             device=DEVICE,
             verbose=False,
         )
@@ -225,6 +231,8 @@ async def predict(file: UploadFile = File(...)):
         "success": True,
         "message": "Prediction completed successfully",
         "filename": file.filename,
+        "model": "base_best",
+        "model_path": MODEL_PATH,
         "image": {
             "format": "jpg",
             "base64": image_base64,
